@@ -1,4 +1,4 @@
-package com.technical.myapplication
+package com.example.explore
 
 import android.Manifest
 import android.app.Activity
@@ -27,30 +27,43 @@ class MainActivity : AppCompatActivity() {
     private lateinit var addressText: TextView
     private lateinit var locationButton: Button
     private lateinit var locationRequest: LocationRequest
+    private lateinit var fusedLocationClient: FusedLocationProviderClient
+    private var requestingLocationUpdates = false
+    private var locationCallback: LocationCallback? = null
 
-    // The onCreate function is where the setup for the activity's layout happens
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
-        // Initialize the TextView and Button from the layout
         addressText = findViewById(R.id.addressText)
         locationButton = findViewById(R.id.locationButton)
 
-        // Set up the location request parameters
         locationRequest = LocationRequest.create().apply {
             priority = LocationRequest.PRIORITY_HIGH_ACCURACY
             interval = 5000
             fastestInterval = 2000
         }
 
-        // Set the onClickListener for the button to trigger location update
+        fusedLocationClient = LocationServices.getFusedLocationProviderClient(this)
+
         locationButton.setOnClickListener {
+            requestingLocationUpdates = !requestingLocationUpdates
             getCurrentLocation()
+        }
+
+        locationCallback = object : LocationCallback() {
+            override fun onLocationResult(locationResult: LocationResult?) {
+                super.onLocationResult(locationResult)
+                locationResult?.let {
+                    val lastIndex = it.locations.size - 1
+                    val latitude = it.locations[lastIndex].latitude
+                    val longitude = it.locations[lastIndex].longitude
+                    addressText.text = "Latitude: $latitude\nLongitude: $longitude"
+                }
+            }
         }
     }
 
-    // Handle the result of the permission request
     override fun onRequestPermissionsResult(
         requestCode: Int,
         @NonNull permissions: Array<String>,
@@ -66,7 +79,6 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    // Handle the result of turning on the GPS
     override fun onActivityResult(requestCode: Int, resultCode: Int, @Nullable data: Intent?) {
         super.onActivityResult(requestCode, resultCode, data)
         if (requestCode == 2 && resultCode == Activity.RESULT_OK) {
@@ -74,25 +86,15 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    // Function to get the current location of the device
     private fun getCurrentLocation() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
             if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
                 if (isGPSEnabled()) {
-                    LocationServices.getFusedLocationProviderClient(this)
-                        .requestLocationUpdates(locationRequest, object : LocationCallback() {
-                            override fun onLocationResult(locationResult: LocationResult?) {
-                                super.onLocationResult(locationResult)
-                                LocationServices.getFusedLocationProviderClient(this@MainActivity)
-                                    .removeLocationUpdates(this)
-                                locationResult?.let {
-                                    val lastIndex = it.locations.size - 1
-                                    val latitude = it.locations[lastIndex].latitude
-                                    val longitude = it.locations[lastIndex].longitude
-                                    addressText.text = "Latitude: $latitude\nLongitude: $longitude"
-                                }
-                            }
-                        }, Looper.getMainLooper())
+                    if (requestingLocationUpdates) {
+                        fusedLocationClient.requestLocationUpdates(locationRequest, locationCallback!!, Looper.getMainLooper())
+                    } else {
+                        fusedLocationClient.removeLocationUpdates(locationCallback!!)
+                    }
                 } else {
                     turnOnGPS()
                 }
@@ -102,7 +104,6 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    // Function to prompt the user to turn on the GPS if it's off
     private fun turnOnGPS() {
         val locationSettingsRequest = LocationSettingsRequest.Builder()
             .addLocationRequest(locationRequest)
@@ -131,7 +132,6 @@ class MainActivity : AppCompatActivity() {
             }
     }
 
-    // Check if the GPS is enabled
     private fun isGPSEnabled(): Boolean {
         val locationManager = getSystemService(Context.LOCATION_SERVICE) as LocationManager
         return locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER)
