@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
-<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    package="com.example.explore">
 
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION"/>
     <uses-permission android:name="android.permission.INTERNET"/>
@@ -7,14 +8,15 @@
     <application
         android:allowBackup="true"
         android:icon="@mipmap/ic_launcher"
-        android:label="@string/app_name"
+        android:label="Track Me"
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
-        >
-        <activity android:name=".MainActivity"
-            android:theme="@style/AppTheme"
-            android:exported="true"> <!-- or false, depending on whether you want to allow other apps to launch this activity -->
+        android:theme="@style/AppTheme">
 
+        <activity
+            android:name=".MainActivity"
+            android:theme="@style/AppTheme"
+            android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />

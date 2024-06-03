@@ -1,4 +1,4 @@
-package com.example.gpstrackingdemo.ui.theme
+package com.example.explore.ui.theme
 
 import androidx.compose.ui.graphics.Color
 
